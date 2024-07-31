@@ -1,0 +1,1 @@
+{"id": 9, "name": "Sifatullah jan", "address": "khar peshawar", "phone": "03159756706", "email": "sifat@gmail.com", "jobs": {"name": "Sr Software Engineer", "description": "Sr Software Engineer of backend", "salary_range": {"maximum": 500000, "minimum": 50000}}, "department": {"name": "Backend"}}

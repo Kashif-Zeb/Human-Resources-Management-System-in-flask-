@@ -1,0 +1,6 @@
+*.bat
+runDebug.bat
+.env
+.sh
+myenv/
+venv/

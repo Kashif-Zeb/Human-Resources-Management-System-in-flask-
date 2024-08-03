@@ -22,6 +22,12 @@ from hr.blueprints.payroll import bp as payroll
 from hr.blueprints.performance import bp as performance
 from hr.blueprints.training import bp as training
 from hr.celery_settings import celery_init_app
+from flask_mail import Mail
+from .signals import user_logged_in
+from .emails import send_login_email
+from .email_initalize import mail
+from .limiters import limiter
+from flask_limiter.errors import RateLimitExceeded
 migrate = Migrate()
 
 
@@ -31,7 +37,7 @@ def create_app():
     # app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///testing.db"
     app.config[
         "SQLALCHEMY_DATABASE_URI"
-    ] = f"mysql+pymysql://{config.DB_USER}:{config.DB_PWD}@{config.DB_URL}:{config.DB_PORT}/{config.DB_NAME}"
+    ] = f"mysql+pymysql://{config.DB_USER}:{config.DB_PWD}@{config.DB_URL}:{config.DB_PORT}/{config.DB_NAME}"    #os.getenv("DATABASE_URI") for docker
     # app.config[
     #     "SQLALCHEMY_DATABASE_URI"
     # ] = f"mysql+pymysql://{config.DB_USER}:{config.DB_PWD}@{config.DB_URL}/{config.DB_NAME}"
@@ -54,6 +60,7 @@ def create_app():
     migrate.init_app(app, db)
     @app.errorhandler(HTTPStatus.BAD_REQUEST)
     @app.errorhandler(HTTPStatus.UNPROCESSABLE_ENTITY)
+    # @app.errorhandler(HTTPStatus.TOO_MANY_REQUESTS)
     def webargs_error_handler(err):
         headers = err.data.get("headers", None)
         messages = err.data.get("messages", ["Invalid request."])
@@ -62,6 +69,9 @@ def create_app():
         else:
             return jsonify({"errors": messages}), err.code
     
+    @app.errorhandler(RateLimitExceeded)
+    def handle_too_many_requests(error):
+        return jsonify(str(error)),error.code
     # with app.app_context():
     #     db.create_all()
     # celery = make_celery(app)
@@ -74,8 +84,16 @@ def create_app():
 )
     celery_app = celery_init_app(app)
 
+    app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+    app.config['MAIL_PORT'] = 587
+    app.config['MAIL_USE_TLS'] = True
+    app.config['MAIL_USERNAME'] = 'kashifzeb19@gmail.com'
+    app.config['MAIL_PASSWORD'] = 'tqoy bzen jlxl kgyn'
+    app.config['MAIL_DEFAULT_SENDER'] = 'kashifzk216@gmail.com'
 
-    
+    mail.init_app(app)
+    user_logged_in.connect(send_login_email)
+    limiter.init_app(app)
     app.register_blueprint(user)
     app.register_blueprint(department)
     app.register_blueprint(job)

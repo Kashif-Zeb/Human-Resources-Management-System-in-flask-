@@ -2,3 +2,5 @@ flask db init
 flask db migrate -m "Initial migration."
 flask db upgrade
 
+docker-compose run web bash
+docker exec -it bds_db_1 mysql -u root -pkashif

@@ -104,7 +104,7 @@ class employeeBLC:
                 additional_claims = {"role": user.role}
                 access_token = create_access_token(identity=user.username,additional_claims=additional_claims)
                 refresh_token = create_refresh_token(identity=user.username,additional_claims=additional_claims)
-                return jsonify(access_token=access_token, refresh_token=refresh_token)
+                return access_token,refresh_token,user
             else:
                 return jsonify({"error":"password is invalid"})
         else:

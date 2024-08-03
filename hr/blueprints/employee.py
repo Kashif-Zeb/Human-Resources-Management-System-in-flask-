@@ -13,6 +13,8 @@ from http import HTTPStatus
 from flask_jwt_extended import jwt_required,JWTManager,decode_token
 from functools import wraps
 from hr.tasks import file
+from hr.signals import user_logged_in
+from hr.limiters import limiter
 bp = Blueprint("employee", __name__)
 
 
@@ -58,8 +60,9 @@ def register(args:dict):
            "password":fields.String(required=True)},location="json")
 def login(args):
     try:
-        user =employeeBLC.checking_user(args)
-        return user,HTTPStatus.OK
+        access_token,refresh_token,user =employeeBLC.checking_user(args)
+        user_logged_in.send(None,username=user.username)
+        return jsonify({"access_token":access_token,"refresh_token":refresh_token}),HTTPStatus.OK
     except Exception as e:
         return jsonify({"message":str(e)}),HTTPStatus.UNPROCESSABLE_ENTITY
 
@@ -78,13 +81,13 @@ def add_employee(args:dict):
 @bp.route("/get_employee_by_id",methods=["GET"])
 @jwt_required()
 @higherrole
+@limiter.limit("2 per minute")
 @use_args({"employee_id":fields.Integer(required=True,validate=validate.Range(min=1,error="employee_id must be a positive integer"))},location="query")
 def get_employee_by_id(args):
     # try:
         employee = employeeBLC.getting_employee(args)
         schema = employee_details_with_DJ()
         res = schema.dump(employee)
-        breakpoint()
         file.delay(res)
         return res,HTTPStatus.OK
     # except Exception as e:

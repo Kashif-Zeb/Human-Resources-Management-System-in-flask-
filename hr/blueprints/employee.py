@@ -1,4 +1,4 @@
-from flask import request, jsonify
+from flask import request, jsonify,after_this_request,g
 from webargs.flaskparser import use_args
 from hr.app.schemas.employeeSchema import employee_details_with_DJ, employeeSchema, update_employee
 from functools import wraps
@@ -17,6 +17,11 @@ from hr.signals import user_logged_in
 from hr.limiters import limiter
 bp = Blueprint("employee", __name__)
 
+# def after_this_request(func):
+#     if not hasattr(g, 'call_after_request'):
+#         g.call_after_request = []
+#     g.call_after_request.append(func)
+#     return func
 
 def get_role_from_token():
     header = request.headers.get("Authorization")
@@ -61,7 +66,11 @@ def register(args:dict):
 def login(args):
     try:
         access_token,refresh_token,user =employeeBLC.checking_user(args)
-        user_logged_in.send(None,username=user.username)
+        @after_this_request
+        def sig(response):
+            user_logged_in.send(None,username=user.username)
+            return response
+        print("returninnggggggggg")
         return jsonify({"access_token":access_token,"refresh_token":refresh_token}),HTTPStatus.OK
     except Exception as e:
         return jsonify({"message":str(e)}),HTTPStatus.UNPROCESSABLE_ENTITY

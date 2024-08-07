@@ -5,7 +5,7 @@ from hr.app.models.Department import Department
 from hr.app.models.users import Users
 from sqlalchemy.orm import scoped_session
 from sqlalchemy.orm import joinedload
-from flask_sqlalchemy import pagination
+# from flask_sqlalchemy import pagination
 # from hr.app.db import db
 # from hr.app.models.BloodDonation import BloodDonation
 from sqlalchemy.exc import SQLAlchemyError

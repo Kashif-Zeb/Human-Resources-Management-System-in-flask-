@@ -4,7 +4,7 @@ from hr.app.models.Job import Job
 from hr.app.models.Department import Department
 from sqlalchemy.orm import scoped_session
 from sqlalchemy.orm import joinedload
-from flask_sqlalchemy import pagination
+# from flask_sqlalchemy import pagination
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import desc
 

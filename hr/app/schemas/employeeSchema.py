@@ -8,6 +8,8 @@ from marshmallow import (
 )
 from hr.app.schemas.jobSchema import JobSchema
 from hr.app.schemas.departmentSchema import DepartmentSchema
+from hr.app.schemas.documentSchema import documentSchema
+
 
 def no_space_validation(name):
     def validator(value):
@@ -36,6 +38,43 @@ class employeeSchema(Schema):
     job_id = fields.Integer(required=True,validate=[validate.Range(min=1,error="job_id must be a positive integer"),check_not_float("job_id")])
     department_id = fields.Integer(required=True,validate=validate.Range(min=1,error="department_id must be a positive integer"))
 
+class path(Schema):
+    id = fields.Integer()
+    path_name = fields.String()
+
+class mm(Schema):
+    document_count = fields.Integer(attribute = "document_count")
+    @staticmethod
+    def serialize(employee_with_count):
+        # employee_with_count is expected to be a tuple (<Employee instance>, count)
+        employee, count = employee_with_count
+        return {
+            'employee': employee_khan().dump(employee),
+            'document_count': count
+        }
+class employee_khan(employeeSchema):
+    comming_path = fields.Nested(path, allow_none=True)
+    going_path = fields.Nested(path, allow_none=True)
+    # @staticmethod
+    # def serialize(employee_with_count):
+    #     # employee_with_count is expected to be a tuple (<Employee instance>, count)
+    #     employee, count = employee_with_count
+    #     return {
+    #         'employee': employeeSchema().dump(employee),
+    #         'document_count': count
+        # }
+    # department = fields.Nested(DepartmentSchema)  # Assuming you have a DepartmentSchema
+    # documents = fields.List(fields.Nested(documentSchema), allow_none=True)
+class hybrid(employeeSchema):
+    coming_path = fields.Nested(path, allow_none=True)
+    going_path = fields.Nested(path, allow_none=True)
+    document_count = fields.Integer()
+class employee_path(Schema):
+    id  = fields.Integer(attribute = 'id')
+    going_path_id = fields.Integer(attribute='going_path.id')
+    going_path_name = fields.String(attribute='going_path.path_name')
+    comming_path_id = fields.Integer(attribute='coming_path.id',allow_none=True)
+    comming_path_name = fields.String(attribute='coming_path.path_name',allow_none=True)
 
 class update_employee(employeeSchema):
     id = fields.Integer(required=True,validate=validate.Range(min=1,error="id must be a positive integer"))

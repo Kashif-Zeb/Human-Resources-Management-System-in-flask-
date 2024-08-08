@@ -1,6 +1,6 @@
 from flask import request, jsonify,after_this_request,g
 from webargs.flaskparser import use_args
-from hr.app.schemas.employeeSchema import employee_details_with_DJ, employeeSchema, update_employee
+from hr.app.schemas.employeeSchema import employee_details_with_DJ, employee_khan, employee_path, employeeSchema, hybrid, mm, update_employee
 from functools import wraps
 from flask import Blueprint
 from marshmallow import fields,validate
@@ -13,6 +13,7 @@ from http import HTTPStatus
 from flask_jwt_extended import jwt_required,JWTManager,decode_token
 from functools import wraps
 from hr.tasks import file
+from hr.app.models.Path import Path
 from hr.signals import user_logged_in
 from hr.limiters import limiter
 bp = Blueprint("employee", __name__)
@@ -146,3 +147,11 @@ def delete_employee(args:dict):
         return jsonify({"message":employee_deleted}),HTTPStatus.OK
     except Exception as e:
         return jsonify({"error":str(e)}),HTTPStatus.UNPROCESSABLE_ENTITY
+@bp.route("/get_employee_with_path",methods=["GET"])
+@use_args({"employee_id":fields.Integer()},location="query")
+def getting_employee_with(args):
+    with_path  = employeeBLC.get_employee_with_path(args)
+    schema = hybrid(many=True)
+    # serialized_data = [schema.serialize(item) for item in with_path]
+    res = schema.dump(with_path)
+    return jsonify(res)

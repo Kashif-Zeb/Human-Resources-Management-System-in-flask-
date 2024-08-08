@@ -109,3 +109,9 @@ class employeeBLC:
                 return jsonify({"error":"password is invalid"})
         else:
             return jsonify({"error":"email is invalid"})
+
+    @staticmethod
+    def get_employee_with_path(args:dict):
+        session  = employeeBLC.get_session()
+        get_from_db = employeeRepository.get_employee_with_path_from_db(session,args)
+        return get_from_db

@@ -1,5 +1,8 @@
+from sqlalchemy import func
 from hr.app.db import db
+from sqlalchemy.ext.hybrid import hybrid_property
 
+from hr.app.models import Document
 employee_training = db.Table(
     "employee_training",
     db.Column("e_id",db.Integer,db.ForeignKey("employee.id",ondelete='CASCADE'),primary_key=True),
@@ -16,7 +19,8 @@ class Employee(db.Model):
     email = db.Column(db.String(50),nullable=True,unique=True)
     job_id =db.Column(db.Integer,db.ForeignKey("job.job_id"))
     department_id = db.Column(db.ForeignKey("department.department_id"))
-
+    going_id = db.Column(db.Integer,db.ForeignKey("path.id"))
+    comming_id = db.Column(db.Integer,db.ForeignKey("path.id"))
     department = db.relationship(
         "Department",
         back_populates="employees",
@@ -53,3 +57,14 @@ class Employee(db.Model):
         "Training", secondary = employee_training,
         back_populates="employees",
     )
+
+    going_path = db.relationship("Path", foreign_keys=[going_id], back_populates="goings")
+    coming_path = db.relationship("Path", foreign_keys=[comming_id], back_populates="comings")   
+
+    @hybrid_property
+    def document_count(self):
+        return len(self.documents)
+    
+    @document_count.expression
+    def document_count(cls):
+        return func.count(Document.id).label('document_count')

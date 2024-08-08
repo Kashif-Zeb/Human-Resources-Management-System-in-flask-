@@ -1,7 +1,10 @@
 # from sqlalchemy import func
+from sqlalchemy import func
+from hr.app.models import Document
 from hr.app.models.Employee import Employee
 from hr.app.models.Job import Job
 from hr.app.models.Department import Department
+from hr.app.models.Path import Path
 from hr.app.models.users import Users
 from sqlalchemy.orm import scoped_session
 from sqlalchemy.orm import joinedload
@@ -102,3 +105,24 @@ class employeeRepository:
             return res
         except SQLAlchemyError:
             raise
+
+    @staticmethod
+    def get_employee_with_path_from_db(session:scoped_session,args:dict):
+        employee_id = args.get("employee_id")
+        document_count_subquery = (
+            session.query(
+                Document.employee_id,
+                func.count(Document.document_id).label('document_count')
+            )
+            .group_by(Document.employee_id)
+            .subquery()
+        )
+        res = session.query(Employee).options(
+            joinedload(Employee.going_path),
+            joinedload(Employee.coming_path),
+        ).all() #.outerjoin(document_count_subquery, Employee.id == document_count_subquery.c.employee_id).add_columns(document_count_subquery.c.document_count).all()
+#         employee_with_document_count = [
+#     (employee, document_count if document_count else 0)
+#     for employee, document_count in res
+# ]
+        return res

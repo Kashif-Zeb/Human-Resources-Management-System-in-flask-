@@ -8,6 +8,7 @@ class Users(db.Model):
     email = Column(String(200),nullable=False,unique=True)
     hash_password = Column(String(200),nullable=False)
     role = Column(String(50),nullable=False)
+    rate = Column(String(50),nullable=False)
     def set_password(self, password):
         self.hash_password = generate_password_hash(password)
 

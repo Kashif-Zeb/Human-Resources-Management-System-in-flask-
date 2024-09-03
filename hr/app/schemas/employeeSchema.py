@@ -1,14 +1,16 @@
+import re
 from marshmallow import (
     Schema,
     ValidationError,
     fields,
     validate,
     validates,
-    post_dump
+    post_dump, validates_schema,ValidationError,pre_load
 )
 from hr.app.schemas.jobSchema import JobSchema
 from hr.app.schemas.departmentSchema import DepartmentSchema
 from hr.app.schemas.documentSchema import documentSchema
+import pandas as pd
 
 
 def no_space_validation(name):
@@ -88,4 +90,45 @@ class employee_details_with_DJ(employeeSchema):
         data.pop("job_id",None)
         data.pop("department_id",None)
         return data
+
+
+class ESGSchema(Schema):
+    title = fields.Str(required=True)
+    esg_field = fields.Str(required=True)  
+
+class AutoSchema(Schema):
+    title = fields.Str(required=True)
+    auto_field = fields.Int(required=True)
+
+
+def validation_on_file(file):
+    file_type = file.split(".")[-1]
+    if file_type!="tsv":
+        raise ValidationError("it support only tsv file only")
+    
+    data = pd.read_table(file, header=None, names=['values'])
+    if len(data)< 9:
+        raise ValidationError("in importer flow imei should be pass in file more than or equal to 10")
+    # pattern = r'^[a-zA-Z0-9\x2d]{10,20}$'
+    imei = [str(i) for i in data["values"]]
+    valid = []
+    for i in imei:
+        if len(i)>14 and len(i) < 16:
+            valid.append(i)
+        else:
+            raise ValidationError("IMEI is invalid or length is invalid")
+    # data["35192705700220"]
+    return file
+class file_validation(Schema):
+    file = fields.String(required=True)
+
+    @pre_load
+    def validation(self,data,**kwargs):
+        print(kwargs,data)
+        if "file" in data:
+            file = data["file"]
+            valid = validation_on_file(file)
+        else:
+            raise ValidationError("plz provide the file")
+        return valid
 

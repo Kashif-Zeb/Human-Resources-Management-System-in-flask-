@@ -26,7 +26,7 @@ from flask_mail import Mail
 from .signals import user_logged_in
 from .emails import send_login_email
 from .email_initalize import mail
-from .limiters import limiter
+from .limiters import limiter,cache
 from flask_limiter.errors import RateLimitExceeded
 migrate = Migrate()
 
@@ -94,6 +94,10 @@ def create_app():
     mail.init_app(app)
     user_logged_in.connect(send_login_email)
     limiter.init_app(app)
+
+    app.config['CACHE_TYPE'] = 'SimpleCache'  # Use SimpleCache for demonstration
+    app.config['CACHE_DEFAULT_TIMEOUT'] = 300
+    cache.init_app(app)
     app.register_blueprint(user)
     app.register_blueprint(department)
     app.register_blueprint(job)

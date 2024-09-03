@@ -1,6 +1,6 @@
 from flask import request, jsonify,after_this_request,g
 from webargs.flaskparser import use_args
-from hr.app.schemas.employeeSchema import employee_details_with_DJ, employee_khan, employee_path, employeeSchema, hybrid, mm, update_employee
+from hr.app.schemas.employeeSchema import ESGSchema,AutoSchema, employee_details_with_DJ, employee_khan, employee_path, employeeSchema, file_validation, hybrid, mm, update_employee
 from functools import wraps
 from flask import Blueprint
 from marshmallow import fields,validate
@@ -15,7 +15,7 @@ from functools import wraps
 from hr.tasks import file
 from hr.app.models.Path import Path
 from hr.signals import user_logged_in
-from hr.limiters import limiter
+from hr.limiters import limiter,cache
 bp = Blueprint("employee", __name__)
 
 # def after_this_request(func):
@@ -50,8 +50,16 @@ def higherrole(view_func):
 def lowrole(view_func):
     return roles_deco(required_role=["employee"])(view_func)
 
-
-
+def get_user_rate():
+    header = request.headers.get("Authorization")
+    if header is None:
+        return None
+    raw_token = header.split(" ")[-1]
+    decode  =  decode_token(raw_token)
+    rate = decode.get("rate")
+    if rate:
+        return rate
+    return "3/minutes"
 @bp.route("/register",methods=["POST"])
 @use_args(userSchema,location="json")
 def register(args:dict):
@@ -88,10 +96,13 @@ def add_employee(args:dict):
         return jsonify({"message":str(e)}),HTTPStatus.UNPROCESSABLE_ENTITY
 
 
+
 @bp.route("/get_employee_by_id",methods=["GET"])
 @jwt_required()
 @higherrole
-@limiter.limit("2 per minute")
+# @limiter.limit("2 per minute")
+# @limiter.limit(get_user_rate)
+@cache.cached(timeout=150)
 @use_args({"employee_id":fields.Integer(required=True,validate=validate.Range(min=1,error="employee_id must be a positive integer"))},location="query")
 def get_employee_by_id(args):
     # try:
@@ -155,3 +166,25 @@ def getting_employee_with(args):
     # serialized_data = [schema.serialize(item) for item in with_path]
     res = schema.dump(with_path)
     return jsonify(res)
+
+# dynamic_schema = dynamic()
+@bp.route("/checkruntimeschema",methods=["POST"])
+# @use_args(dynamic_schema,location="json")
+def checkruntimeschema():
+    data_khan = request.json
+    title = data_khan.get("title")
+    if title=="esg":
+        esg =ESGSchema()
+        data_khan = esg.load(data_khan)
+    else:
+        auto = AutoSchema()
+        data_khan = auto.load(data_khan)
+
+
+    return jsonify(data_khan)
+
+
+@bp.route("/validation_on_file",methods=["POST"])
+@use_args(file_validation,location="json")
+def file_valid(args):
+    return jsonify(args)

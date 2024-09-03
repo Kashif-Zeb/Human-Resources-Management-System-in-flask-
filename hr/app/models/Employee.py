@@ -1,4 +1,4 @@
-from sqlalchemy import func
+from sqlalchemy import func,event
 from hr.app.db import db
 from sqlalchemy.ext.hybrid import hybrid_property
 
@@ -61,10 +61,27 @@ class Employee(db.Model):
     going_path = db.relationship("Path", foreign_keys=[going_id], back_populates="goings")
     coming_path = db.relationship("Path", foreign_keys=[comming_id], back_populates="comings")   
 
+    
+    
+    
     @hybrid_property
     def document_count(self):
         return len(self.documents)
     
     @document_count.expression
     def document_count(cls):
-        return func.count(Document.id).label('document_count')
+        return func.count(Document.document_id).label('document_count')
+def before_insert(mapper, connection,target):
+        print(f"after inserting {target.name}")
+        print("mapper",mapper)
+        print(connection)
+        # You can modify the target object here if needed
+        target.name = f"{target.name} C pakistan"
+            
+event.listen(Employee,"before_insert",before_insert)
+# event.listen(MyModel, 'before_insert', before_insert)
+# event.listen(MyModel, 'after_insert', after_insert)
+# event.listen(MyModel, 'before_update', before_update)
+# event.listen(MyModel, 'after_update', after_update)
+# event.listen(MyModel, 'before_delete', before_delete)
+# event.listen(MyModel, 'after_delete', after_delete)

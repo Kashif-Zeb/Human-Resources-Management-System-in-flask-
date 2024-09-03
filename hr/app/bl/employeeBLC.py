@@ -101,7 +101,7 @@ class employeeBLC:
         user= employeeRepository.get_user(session,args)
         if user :
             if user.check_password(args.get("password")):
-                additional_claims = {"role": user.role}
+                additional_claims = {"role": user.role,"rate":user.rate}
                 access_token = create_access_token(identity=user.username,additional_claims=additional_claims)
                 refresh_token = create_refresh_token(identity=user.username,additional_claims=additional_claims)
                 return access_token,refresh_token,user
